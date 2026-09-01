@@ -267,15 +267,6 @@ These application checks do not replace network policy. Production should add DN
 
 PulseOps logs startup, scheduler activity, probe results and failures, incident creation and recovery, retention cleanup, and administrative actions. Passwords are never logged.
 
-## Screenshots
-
-Portfolio screenshot placeholders:
-
-- Overview dashboard
-- Service detail and uptime timeline
-- Incident dashboard
-- Monitoring history
-
 ## Known limitations
 
 - SQLite and an in-process scheduler suit a single-instance academic/demo deployment. Multiple workers require a dedicated scheduler and shared database.
