@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block title %}{{ 'Edit' if service else 'Add' }} service · PulseOps{% endblock %}{% block heading %}{{ 'Edit Monitored Service' if service else 'Add Monitored Service' }}{% endblock %}
+{% block content %}
+<section class="panel form-panel"><div class="panel-head"><div><h2>Endpoint configuration</h2><p>PulseOps will send requests from the server at the selected interval.</p></div></div>
+<form method="post" class="form-grid"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+<label>Service name<input name="name" required maxlength="120" value="{{ values.name|default('') }}" placeholder="Payments API"></label>
+<label>Environment / category<input name="environment" maxlength="60" value="{{ values.environment|default('Production') }}" placeholder="Production"></label>
+<label class="full">Description<textarea name="description" rows="3" maxlength="1000" placeholder="Purpose and ownership of this endpoint">{{ values.description|default('') or '' }}</textarea></label>
+<label class="full">Endpoint URL<input class="{{ 'invalid' if errors.endpoint_url }}" name="endpoint_url" type="url" required maxlength="500" value="{{ values.endpoint_url|default('') }}" placeholder="https://api.example.com/health"><small>Only HTTP and HTTPS URLs are accepted.</small></label>
+<label>HTTP method<select name="method" data-method-select>{% for method in ['GET','HEAD','POST'] %}<option value="{{ method }}" {{ 'selected' if values.method|default('GET') == method }}>{{ method }}</option>{% endfor %}</select></label>
+<label>Expected HTTP status<input name="expected_status" type="number" value="{{ values.expected_status|default(200) }}" min="100" max="599"></label>
+<label>Check interval (seconds)<input name="interval_seconds" type="number" value="{{ values.interval_seconds|default(60) }}" min="10" max="86400"></label>
+<label>Request timeout (seconds)<input name="timeout_seconds" type="number" value="{{ values.timeout_seconds|default(8) }}" min="1" max="120"></label>
+<label>Response threshold (ms)<input name="response_threshold_ms" type="number" value="{{ values.response_threshold_ms|default(1000) }}" min="1" max="300000"><small>Successful checks above this become degraded.</small></label>
+<label>Failure threshold<input name="failure_threshold" type="number" value="{{ values.failure_threshold|default(3) }}" min="1" max="100"><small>Failures required before an incident opens.</small></label>
+<label class="full post-body">Optional POST JSON body<textarea name="post_body" rows="5" placeholder='{"probe": true}'>{{ values.post_body|default('') or '' }}</textarea></label>
+<div class="form-actions"><a class="btn" href="{{ url_for('services.service_detail', service_id=service.id) if service else url_for('services.list_services') }}">Cancel</a><button class="btn primary">{{ 'Save changes' if service else 'Create service' }}</button></div>
+</form></section>
+{% endblock %}

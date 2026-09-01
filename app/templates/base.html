@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}PulseOps{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% set can_admin = config.LOGIN_DISABLED or (current_user.is_authenticated and current_user.is_admin) %}
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="brand-mark">P</span><div><strong>PulseOps</strong><small>Service Health</small></div></div>
+    <nav>
+      <a class="{{ 'active' if request.blueprint == 'dashboard' }}" href="{{ url_for('dashboard.index') }}"><i data-lucide="layout-dashboard"></i>Overview</a>
+      <a class="{{ 'active' if request.blueprint == 'services' }}" href="{{ url_for('services.list_services') }}"><i data-lucide="activity"></i>Services</a>
+      <a class="{{ 'active' if request.blueprint == 'alerts' }}" href="{{ url_for('alerts.list_alerts') }}"><i data-lucide="bell-ring"></i>Alerts</a>
+      <a class="{{ 'active' if request.blueprint == 'history' }}" href="{{ url_for('history.index') }}"><i data-lucide="history"></i>History</a>
+      <a class="{{ 'active' if request.endpoint == 'admin.api_docs' }}" href="{{ url_for('admin.api_docs') }}"><i data-lucide="braces"></i>API Documentation</a>
+      {% if can_admin %}
+      <a class="{{ 'active' if request.endpoint == 'admin.audit_log' }}" href="{{ url_for('admin.audit_log') }}"><i data-lucide="scroll-text"></i>Audit Log</a>
+      <a class="{{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}"><i data-lucide="settings"></i>Settings</a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-foot">
+      {% if current_user.is_authenticated %}
+      <div class="user-card"><span class="avatar">{{ current_user.username[0]|upper }}</span><div><strong>{{ current_user.username }}</strong><small>{{ current_user.role|title }}</small></div></div>
+      <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="logout"><i data-lucide="log-out"></i>Sign out</button></form>
+      {% else %}<span>Flask · SQLite · REST</span>{% endif %}
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="mobile-menu" type="button" aria-label="Toggle navigation" data-menu-toggle><i data-lucide="menu"></i></button>
+      <div><p class="eyebrow">OPERATIONS CONSOLE</p><h1>{% block heading %}Service Health{% endblock %}</h1></div>
+      {% if can_admin %}<a class="btn primary" href="{{ url_for('services.create_service') }}"><i data-lucide="plus"></i>Add service</a>{% endif %}
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

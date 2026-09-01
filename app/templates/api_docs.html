@@ -1,0 +1,15 @@
+{% extends 'base.html' %}{% block title %}API Documentation · PulseOps{% endblock %}{% block heading %}REST API Documentation{% endblock %}{% block content %}
+<section class="panel docs-intro"><h2>PulseOps API v1</h2><p>JSON monitoring data and service administration are available under <code>/api/v1</code>. Read endpoints are suitable for dashboard integrations. Mutating endpoints require an authenticated Admin session.</p><div class="code-block"><code>{"error":{"code":"SERVICE_NOT_FOUND","message":"The requested monitored service does not exist."}}</code></div></section>
+{% set endpoints=[('GET','/api/v1/health','Application and database health'),('GET','/api/v1/services','List monitored services and current state'),('GET','/api/v1/services/{id}','Retrieve one monitored service'),('POST','/api/v1/services','Create a monitored service (Admin)'),('PUT','/api/v1/services/{id}','Update a monitored service (Admin)'),('DELETE','/api/v1/services/{id}','Delete a monitored service (Admin)'),('POST','/api/v1/services/{id}/check','Run an immediate health check (Admin)'),('GET','/api/v1/services/{id}/history','Retrieve recent health checks'),('GET','/api/v1/services/{id}/metrics','Retrieve uptime and latency metrics'),('GET','/api/v1/alerts','List and filter incidents'),('GET','/api/v1/dashboard/summary','Dashboard KPIs and chart series')] %}
+<section class="panel"><div class="table-wrap"><table><thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead><tbody>{% for method,path,purpose in endpoints %}<tr><td><span class="method {{ method|lower }}">{{ method }}</span></td><td><code>{{ path }}</code></td><td>{{ purpose }}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="panel"><div class="panel-head"><div><h2>Create service example</h2><p>Content-Type: application/json</p></div></div><pre class="code-block"><code>{
+  "name": "Payments API",
+  "endpoint_url": "https://api.example.com/health",
+  "method": "GET",
+  "expected_status": 200,
+  "interval_seconds": 60,
+  "timeout_seconds": 8,
+  "response_threshold_ms": 1000,
+  "failure_threshold": 3,
+  "environment": "Production"
+}</code></pre></section>{% endblock %}

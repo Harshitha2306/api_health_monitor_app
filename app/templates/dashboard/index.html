@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Overview · PulseOps{% endblock %}
+{% block heading %}Monitoring Overview{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>{% endblock %}
+{% block content %}
+<section class="dashboard-hero">
+  <div class="hero-copy">
+    <span class="live-pill"><i></i> Live monitoring</span>
+    <h2>Your API estate, at a glance.</h2>
+    <p>Track availability, latency, incidents, and operational health from one focused workspace.</p>
+  </div>
+  <div class="hero-signal" aria-label="{{ metrics.active_services }} active monitors">
+    <span class="signal-icon"><i data-lucide="radio-tower"></i></span>
+    <div><strong>{{ metrics.active_services }}</strong><small>active monitors</small></div>
+  </div>
+</section>
+<div class="cards kpi-grid" data-dashboard data-refresh="{{ refresh_seconds }}">
+  <div class="stat stat-primary"><div class="stat-top"><span>Total services</span><i data-lucide="layers-3"></i></div><strong data-kpi="total_services">{{ metrics.total_services }}</strong><small>{{ metrics.active_services }} active monitors</small></div>
+  <div class="stat stat-good"><div class="stat-top"><span>Healthy services</span><i data-lucide="circle-check-big"></i></div><strong class="good-text" data-kpi="healthy_services">{{ metrics.healthy_services }}</strong><small>Responding normally</small></div>
+  <div class="stat stat-warn"><div class="stat-top"><span>Degraded services</span><i data-lucide="triangle-alert"></i></div><strong class="warn-text" data-kpi="degraded_services">{{ metrics.degraded_services }}</strong><small>Above latency threshold</small></div>
+  <div class="stat stat-bad"><div class="stat-top"><span>Down services</span><i data-lucide="circle-x"></i></div><strong class="bad-text" data-kpi="down_services">{{ metrics.down_services }}</strong><small>Unavailable or unexpected</small></div>
+  <div class="stat stat-latency"><div class="stat-top"><span>Average response</span><i data-lucide="gauge"></i></div><strong data-kpi="avg_response">{{ metrics.avg_response ~ ' ms' if metrics.avg_response is not none else 'No data' }}</strong><small>Last 24 hours</small></div>
+  <div class="stat stat-alert"><div class="stat-top"><span>Open alerts</span><i data-lucide="bell-ring"></i></div><strong data-kpi="open_alerts">{{ metrics.open_alerts }}</strong><small>Open or acknowledged</small></div>
+  <div class="stat stat-uptime"><div class="stat-top"><span>24-hour uptime</span><i data-lucide="trending-up"></i></div><strong data-kpi="uptime_pct">{{ metrics.uptime_pct ~ '%' if metrics.uptime_pct is not none else 'No data' }}</strong><small>Measured checks only</small></div>
+</div>
+<section class="panel service-panel">
+  <div class="panel-head"><div><h2>Service status</h2><p>Live availability and latency snapshot. Updates every {{ refresh_seconds }} seconds.</p></div><a href="{{ url_for('services.list_services') }}">View all</a></div>
+  <div class="table-wrap"><table><thead><tr><th>Service</th><th>Health</th><th>HTTP</th><th>Latency</th><th>24h uptime</th><th>Last checked</th><th>Monitoring</th></tr></thead><tbody data-service-rows>
+  {% for item in metrics.latest_rows %}{% set service=item.service %}{% set check=item.check %}
+    <tr data-service-id="{{ service.id }}"><td><a href="{{ url_for('services.service_detail', service_id=service.id) }}"><strong>{{ service.name }}</strong><span class="environment-tag">{{ service.environment }}</span><small class="cell-sub">{{ service.endpoint_url }}</small></a></td>
+    <td data-field="health"><span class="badge {{ service.health_status }}">{{ service.health_status }}</span></td>
+    <td data-field="status">{{ check.http_status if check and check.http_status else '—' }}</td><td data-field="latency">{{ check.response_time_ms ~ ' ms' if check else '—' }}</td>
+    <td data-field="uptime">{{ item.uptime_24h ~ '%' if item.uptime_24h is not none else 'No data' }}</td>
+    <td data-field="checked">{{ service.last_checked_at.strftime('%Y-%m-%d %H:%M:%S') if service.last_checked_at else 'Never' }}</td>
+    <td data-field="monitoring"><span class="monitor-dot {{ 'on' if service.is_active else '' }}"></span>{{ 'Active' if service.is_active else 'Paused' }}</td></tr>
+  {% else %}<tr><td colspan="7" class="empty"><strong>No monitored services configured.</strong><span>Add your first REST endpoint to start collecting availability data.</span></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<div class="chart-grid">
+  <section class="panel chart-panel"><div class="panel-head"><div><h2>Response time history</h2><p>Recent latency by monitored service.</p></div><span class="panel-icon"><i data-lucide="chart-no-axes-combined"></i></span></div><div class="chart-box"><canvas id="responseChart"></canvas><div class="chart-empty">No response-time data yet.</div></div></section>
+  <section class="panel chart-panel"><div class="panel-head"><div><h2>Health check distribution</h2><p>Last 24 hours.</p></div><span class="panel-icon"><i data-lucide="chart-pie"></i></span></div><div class="chart-box"><canvas id="distributionChart"></canvas><div class="chart-empty">No health checks recorded yet.</div></div></section>
+</div>
+<section class="panel chart-panel"><div class="panel-head"><div><h2>Uptime trend</h2><p>Daily measured availability over the last seven days.</p></div><span class="panel-icon"><i data-lucide="activity"></i></span></div><div class="chart-box"><canvas id="uptimeChart"></canvas><div class="chart-empty">No uptime observations yet.</div></div></section>
+<div class="detail-grid">
+<section class="panel"><div class="panel-head"><div><h2>Recent incidents</h2><p>Latest failure and recovery events.</p></div><a href="{{ url_for('alerts.list_alerts') }}">All alerts</a></div>
+  <div class="alert-list">{% for alert in recent_alerts %}<a href="{{ url_for('alerts.alert_detail', alert_id=alert.id) }}" class="alert-row"><div><strong>{{ alert.title }}</strong><p>{{ alert.message }}</p></div><span class="badge {{ alert.status }}">{{ alert.status }}</span></a>{% else %}<div class="empty"><strong>No incidents detected.</strong><span>Service failures will appear here.</span></div>{% endfor %}</div>
+</section>
+<section class="panel"><div class="panel-head"><div><h2>Monitoring engine</h2><p>Runtime status reported by the application.</p></div></div>
+  <div class="system-health">
+    <div><span>Scheduler</span><strong>{{ engine_health.scheduler_state }}</strong></div>
+    <div><span>Last scheduler cycle</span><strong>{{ engine_health.last_cycle.strftime('%Y-%m-%d %H:%M:%S') if engine_health.last_cycle else 'Not run yet' }}</strong></div>
+    <div><span>Active monitors</span><strong>{{ engine_health.active_monitors }}</strong></div>
+    <div><span>Database</span><strong>{{ engine_health.database_status }}</strong></div>
+    <div><span>Application uptime</span><strong>{{ format_duration(engine_health.application_uptime) }}</strong></div>
+  </div>
+</section></div>
+{% endblock %}
+{% block scripts %}<script>window.PulseOpsDashboard && window.PulseOpsDashboard();</script>{% endblock %}
